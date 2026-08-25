@@ -6,13 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Persistence\Configurations\" />
-    <Folder Include="Services\" />
-    <Folder Include="Settings\" />
-    <Folder Include="Repositories\" />
-  </ItemGroup>
-
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
 		  <PrivateAssets>all</PrivateAssets>
@@ -31,6 +24,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\SecureAuth.Application\SecureAuth.Application.csproj" />
 	  <ProjectReference Include="..\SecureAuth.Domain\SecureAuth.Domain.csproj" />
 	</ItemGroup>
 
