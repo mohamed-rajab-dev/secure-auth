@@ -19,11 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Middlewares\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\SecureAuth.Application\SecureAuth.Application.csproj" />
     <ProjectReference Include="..\SecureAuth.Infrastructure\SecureAuth.Infrastructure.csproj" />
   </ItemGroup>
 
