@@ -2,6 +2,7 @@
 using SecureAuth.Domain.Entities;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Text;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -22,5 +23,8 @@ namespace SecureAuth.Application.Interfaces.Repositories
         Task RevokeRefreshTokenAsync(string token);
         Task AddRefreshTokenAsync(RefreshToken refreshToken);
         Task<RefreshToken?> GetRefreshTokenAsync(string token);
+        Task<IdentityResult> UpdatePasswordAsync(User user, string newPassword);
+        Task<List<Claim>> GetPermissionsFromUserRoles(User user);
+        //Task RestPassword(User user, string newPassword);
     }
 }

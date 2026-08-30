@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SecureAuth.Api.Authorization;
 using SecureAuth.Api.Filters;
 using SecureAuth.Api.Middlewares;
 using SecureAuth.Application;
@@ -28,6 +30,10 @@ namespace SecureAuth.Api
 
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddApplication();
+
+            builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
+            builder.Services.AddScoped<IAuthorizationHandler,PermissionAuthorizationHandler>();
 
             var app = builder.Build();
 

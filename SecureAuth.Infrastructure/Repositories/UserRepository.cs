@@ -5,19 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using SecureAuth.Application.Interfaces.Repositories;
 using SecureAuth.Domain.Entities;
 using SecureAuth.Infrastructure.Persistence;
+using System.Security.Claims;
 
 namespace SecureAuth.Infrastructure.Repositories
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository(UserManager<User> userManager, AppDbContext context) : IUserRepository
     {
-        private readonly UserManager<User> _userManager;
-        private readonly AppDbContext _context;
+        private readonly UserManager<User> _userManager = userManager;
+        private readonly AppDbContext _context = context;
 
-        public UserRepository(UserManager<User> userManager, AppDbContext context)
-        {
-            _userManager = userManager;
-            _context = context;
-        }
 
         public async Task<User?> GetByIdAsync(long id)
         {
@@ -74,19 +70,26 @@ namespace SecureAuth.Infrastructure.Repositories
 
         }
 
-        public Task<IdentityResult> CreatePasswordAsync(User user, string password)
+        public async Task<IdentityResult> UpdatePasswordAsync(User user, string newPassword)
         {
-            return _userManager.CreateAsync(user, password);
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            return await _userManager.ResetPasswordAsync(user, token, newPassword);
         }
 
-        public Task<IdentityResult> AddRoleAsync(User user, string role)
+        public async Task<IdentityResult> CreatePasswordAsync(User user, string password)
         {
-            return _userManager.AddToRoleAsync(user, role);
+            return await _userManager.CreateAsync(user, password);
         }
 
-        public Task<User?> GetByRefreshTokenAsync(string token)
+
+        public async Task<IdentityResult> AddRoleAsync(User user, string role)
         {
-            return _userManager.Users
+            return  await _userManager.AddToRoleAsync(user, role);
+        }
+
+        public async Task<User?> GetByRefreshTokenAsync(string token)
+        {
+            return await _userManager.Users
                 .Include(u => u.RefreshTokens)
                 .SingleOrDefaultAsync(u => u.RefreshTokens.Any(rt => rt.Token == token));
         }
@@ -97,6 +100,19 @@ namespace SecureAuth.Infrastructure.Repositories
                 .Where(rt => rt.Token == token)
                 .ExecuteUpdateAsync(setters => setters
                     .SetProperty(rt => rt.RevokedAt, DateTimeOffset.UtcNow));
+        }
+
+        public async Task<List<Claim>> GetPermissionsFromUserRoles(User user)
+        {
+            var permissions = await (
+            from userRole in _context.Set<IdentityUserRole<long>>()
+            join rolePermission in _context.Set<IdentityRoleClaim<long>>()
+                on userRole.RoleId equals rolePermission.RoleId
+            where userRole.UserId == user.Id && rolePermission.ClaimType == "permission"
+            select new Claim("permission", rolePermission.ClaimValue!)
+            ).Distinct().ToListAsync();
+
+            return permissions;
         }
     }
 }

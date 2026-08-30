@@ -12,5 +12,11 @@ namespace SecureAuth.Application.Interfaces.Services
         public Task<Result> ResendOtpAsync(EmailDto emailDto);
         public Task<Result<AuthResponse>> VerifyOtpAsync(VerifyOtpDto verifyOtpDto);
         public Task<Result<AuthResponse>> LoginAsync(LoginDto loginDto);
+        Task<Result> SendRestPasswordOtpAsync(EmailDto emailDto);
+        Task<Result<TokenDto>> VerifyRestPasswordOtpAsync(VerifyOtpDto verifyOtpDto);
+        Task<Result> ResetPasswordAsync(ResetPasswordDto resetPasswordDto , string email);
+        Task<Result<AuthResponse>> RefreshTokenAsync(string refreshToken);
+        Task<Result> LogoutAsync(string refreshToken);
+        Task<Result<UserDto>> GetMe(string email);
     }
 }
