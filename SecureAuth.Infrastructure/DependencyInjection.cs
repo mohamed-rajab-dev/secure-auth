@@ -50,6 +50,7 @@ namespace SecureAuth.Infrastructure
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IOTPService, OTPService>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             services.AddAuthentication(option =>
             {

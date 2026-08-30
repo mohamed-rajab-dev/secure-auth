@@ -10,5 +10,7 @@ namespace SecureAuth.Application.Interfaces.Services
     {
         Task<Result> SendEmailOtp(User user);
         Task<Result> VerifyEmailOtp(User user, string code);
+        Task<Result> SendRestPassword(User user);
+        Task<Result> VerifyRestPassword(User user, string code);
     }
 }

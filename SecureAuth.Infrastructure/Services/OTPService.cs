@@ -9,15 +9,11 @@ using System.Text;
 
 namespace SecureAuth.Infrastructure.Services
 {
-    public class OTPService : IOTPService
+    public class OTPService(UserManager<User> userManager, IMailService mailServices) : IOTPService
     {
-        private readonly UserManager<User> _userManager;
-        private readonly IMailService _mailServices;
-        public OTPService(UserManager<User> userManager, IMailService mailServices)
-        {
-            _userManager = userManager;
-            _mailServices = mailServices;
-        }
+        private readonly UserManager<User> _userManager = userManager;
+        private readonly IMailService _mailServices = mailServices;
+
         public async Task<Result> SendEmailOtp(User? user)
         {
 
@@ -94,6 +90,83 @@ namespace SecureAuth.Infrastructure.Services
 
             return Result.SuccessResult(successMessage);
         }
+
+
+        // RestPassword
+
+        public async Task<Result> SendRestPassword(User user)
+        {
+            if (user is null)
+            {
+                return Result.FailureResult("User is null.");
+            }
+
+            var secretKey = KeyGeneration.GenerateRandomKey(20);
+
+            await _userManager.SetAuthenticationTokenAsync(
+             user,
+             "ResetPassword",
+             "SecretKey",
+             Convert.ToBase64String(secretKey));
+
+
+            await _userManager.SetAuthenticationTokenAsync(
+             user,
+             "ResetPassword",
+             "Attempts",
+             "0");
+
+
+            var totp = new Totp(secretKey, step: 300); // 5 Minutes
+            var otpCode = totp.ComputeTotp();
+
+            var html = BuildOtpEmailTemplate(otpCode);
+
+
+            var sendEmail = await _mailServices.SendEmail(
+                user.Email!,
+                "Reset Password",
+                html);
+            return sendEmail;
+        }
+
+        public async Task<Result> VerifyRestPassword(User user, string code)
+        {
+            const string failureMessage = "Invalid or expired reset password request.";
+            const string successMessage = "Password reset successfully.";
+
+            if (!await _userManager.IsEmailConfirmedAsync(user))
+                return Result.FailureResult(failureMessage);
+
+            var secretKeyValue = await _userManager.GetAuthenticationTokenAsync(user, "ResetPassword", "SecretKey");
+            var attemptsValue = await _userManager.GetAuthenticationTokenAsync(user, "ResetPassword", "Attempts");
+
+            if (string.IsNullOrWhiteSpace(secretKeyValue))
+                return Result.FailureResult(failureMessage);
+
+
+            int attempts = int.Parse(attemptsValue ?? "0");
+
+            if (attempts >= 5)
+                return Result.FailureResult(failureMessage);
+
+            var totp = new Totp(Convert.FromBase64String(secretKeyValue), step: 300);
+            bool isValid = totp.VerifyTotp(code, out long timeStepMatched, new VerificationWindow(previous: 1, future: 1));
+
+
+            if (!isValid)
+            {
+                attempts++;
+                await _userManager.SetAuthenticationTokenAsync(user, "ResetPassword", "Attempts", attempts.ToString());
+                return Result.FailureResult(failureMessage);
+            }
+
+            await _userManager.RemoveAuthenticationTokenAsync(user, "ResetPassword", "SecretKey");
+            await _userManager.RemoveAuthenticationTokenAsync(user, "ResetPassword", "Attempts");
+
+            return Result.SuccessResult(successMessage);
+        }
+
 
 
         // This method builds a responsive HTML email template for the OTP code.

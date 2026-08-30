@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SecureAuth.Api.Attributes;
 using SecureAuth.Application.DTOs;
 using SecureAuth.Application.Interfaces.Services;
+using System.Security.Claims;
 
 namespace SecureAuth.Api.Controllers
 {
@@ -38,6 +40,57 @@ namespace SecureAuth.Api.Controllers
             var result = await _authService.VerifyOtpAsync(verifyOtpDto);
             return HandleResult(result);
         }
+
+        [HttpPost("send/reset")]
+        public async Task<IActionResult> SendReset([FromBody] EmailDto sendResetDto)
+        {
+            var result = await _authService.SendRestPasswordOtpAsync(sendResetDto);
+            return HandleResult(result);
+        }
+
+        [HttpPost("verify/reset")]
+        public async Task<IActionResult> VerifyReset([FromBody] VerifyOtpDto verifyOtpDto)
+        {
+            var result = await _authService.VerifyRestPasswordOtpAsync(verifyOtpDto);
+            return HandleResult(result);
+        }
+        [HasPermission("user.resetPassword")]
+        [HttpPost("reset")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var result = await _authService.ResetPasswordAsync(resetPasswordDto , email!);
+            return HandleResult(result);
+        }
+
+        [HttpGet("refresh")]
+        public async Task<IActionResult> RefreshToken()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            var result = await _authService.RefreshTokenAsync(refreshToken!);
+            return HandleResult(result);
+        }
+
+
+        [HasPermission("user.read")]
+        [HttpGet("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            var result = await _authService.LogoutAsync(refreshToken!);
+            return HandleResult(result);
+        }
+
+        [HasPermission("user.read")]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var result = await _authService.GetMe(email!);
+            return HandleResult(result);
+        }
+
 
     }
 }
